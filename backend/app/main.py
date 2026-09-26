@@ -14,6 +14,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .schemas import DataHealth, ErrorResponse, WorkbookData
+from .loader import WorkbookValidationError, build_data_health, load_workbook
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_DATA_PATH = Path(os.getenv("ATLAS_DATA_PATH", ROOT / "data" / "Atlas_Fresh_Production_Commercial_Data.xlsx"))
 FRONTEND_DIST = ROOT / "frontend" / "dist"
@@ -24,14 +27,31 @@ app = FastAPI(
     description="Production–Commercial decision-support workspace for the daily apple export plan.",
 )
 
-# Server-side source workbook cache (separate from computed results).
 _CACHE: dict[str, WorkbookData] = {}
 
+def _error(status: int, error: str, detail: str | None = None, issues: list[tuple[str, str]] | None = None) -> HTTPException:
+    payload = ErrorResponse(
+        error=error,
+        detail=detail,
+        issues=[{"location": loc, "message": msg} for loc, msg in (issues or [])],
+    )
+    return HTTPException(status_code=status, detail=payload.model_dump())
 
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok"}
 
+@app.post("/api/seed", response_model=DataHealth)
+def seed() -> DataHealth:
+    """Load and validate the supplied workbook (server-side)."""
+    try:
+        data = load_workbook(DEFAULT_DATA_PATH)
+        _CACHE[str(DEFAULT_DATA_PATH)] = data
+        return DataHealth(**build_data_health(data))
+    except WorkbookValidationError as e:
+        raise _error(422, "workbook_invalid", "The workbook did not pass business validation.", e.issues)
+    except Exception as e:  # corrupt file, missing sheet, etc.
+        raise _error(500, "workbook_load_failed", f"Could not load workbook: {e}")
 
 
 # ---------------------------------------------------------------------------
