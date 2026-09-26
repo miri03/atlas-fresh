@@ -14,7 +14,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .schemas import DataHealth, ErrorResponse, WorkbookData
+from .engine import run_plan
+
+from .schemas import DataHealth, ErrorResponse, PlanResult, WorkbookData
 from .loader import WorkbookValidationError, build_data_health, load_workbook
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -28,6 +30,14 @@ app = FastAPI(
 )
 
 _CACHE: dict[str, WorkbookData] = {}
+
+def _get_data() -> WorkbookData:
+    path = str(DEFAULT_DATA_PATH)
+    if path in _CACHE:
+        return _CACHE[path]
+    data = load_workbook(path)
+    _CACHE[path] = data
+    return data
 
 def _error(status: int, error: str, detail: str | None = None, issues: list[tuple[str, str]] | None = None) -> HTTPException:
     payload = ErrorResponse(
@@ -52,6 +62,17 @@ def seed() -> DataHealth:
         raise _error(422, "workbook_invalid", "The workbook did not pass business validation.", e.issues)
     except Exception as e:  # corrupt file, missing sheet, etc.
         raise _error(500, "workbook_load_failed", f"Could not load workbook: {e}")
+
+@app.post("/api/plan", response_model=PlanResult)
+def plan() -> PlanResult:
+    """Compute the deterministic daily allocation for the loaded workbook."""
+    try:
+        data = _get_data()
+    except WorkbookValidationError as e:
+        raise _error(422, "workbook_invalid", "The workbook did not pass business validation.", e.issues)
+    except Exception as e:
+        raise _error(500, "workbook_load_failed", f"Could not load workbook: {e}")
+    return run_plan(data)
 
 
 # ---------------------------------------------------------------------------

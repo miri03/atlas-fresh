@@ -48,6 +48,13 @@ class WorkbookData(BaseModel):
 # Load / validation output
 # ---------------------------------------------------------------------------
 
+class FarmVariance(BaseModel):
+    farm_id: str
+    segment: str
+    expected_t: float
+    actual_t: float
+    variance_t: float
+
 class DataHealth(BaseModel):
     expected_total_t: float = Field(description="Sum of expected farm capacity")
     actual_total_t: float = Field(description="Sum of actual farm receipts")
@@ -73,3 +80,84 @@ class ErrorResponse(BaseModel):
     error: str
     detail: str | None = None
     issues: list[ValidationIssue] = Field(default_factory=list)
+
+# ---------------------------------------------------------------------------
+# Planning output
+# ---------------------------------------------------------------------------
+
+
+class AllocationRow(BaseModel):
+    farm_id: str
+    farm_name: str
+    segment: str
+    client_id: str
+    client_name: str
+    tonnes: float
+    quality_upgrade: int = Field(description="0 = requested segment, >0 = better than requested")
+    export_revenue_eur: float
+
+
+class SegmentVariance(BaseModel):
+    segment: str
+    expected_t: float
+    actual_t: float
+    variance_t: float
+
+
+class FarmComparison(BaseModel):
+    farm_id: str
+    farm_name: str
+    expected_capacity_t: float
+    actual_total_t: float
+    capacity_variance_t: float
+    segment_variances: list[SegmentVariance]
+    local_t: float
+    exported_t: float
+
+
+class ClientStatus(BaseModel):
+    client_id: str
+    client_name: str
+    acceptance_mode: str
+    requested_segment: str
+    demand_t: float
+    allocated_t: float
+    remaining_t: float
+    export_revenue_eur: float
+    status: str  # COMPLETE | PARTIAL | UNSERVED
+    shortage_reason: str | None = None
+
+
+class LocalResidual(BaseModel):
+    farm_id: str
+    segment: str
+    local_t: float
+    local_value_eur: float
+    reference_price_per_t_eur: float
+
+
+class KpiReport(BaseModel):
+    expected_plan_t: float
+    actual_received_t: float
+    station_capacity_t: float
+    export_t: float
+    export_rate: float  # 0..1 raw ratio
+    export_rate_pct: float  # rounded to one decimal
+    local_t: float
+    export_revenue_eur: float
+    local_value_eur: float
+    total_value_eur: float
+    at_risk_client_count: int
+    complete_client_count: int
+    partial_client_count: int
+    unserved_client_count: int
+
+
+class PlanResult(BaseModel):
+    allocations: list[AllocationRow]
+    client_statuses: list[ClientStatus]
+    farm_comparisons: list[FarmComparison]
+    local_residuals: list[LocalResidual]
+    variances: list[FarmVariance]
+    kpis: KpiReport
+    data_health: DataHealth
