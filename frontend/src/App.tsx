@@ -2,15 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, describeApiError } from "./api";
 import { PlanResult } from "./types";
 import { KpiBanner } from "./components/KpiBanner";
-import { ErrorBanner, Spinner } from './components/ui'
+import { ErrorBanner, Spinner } from "./components/ui";
 import { OverviewView } from "./components/OverviewView";
 import { ProductionView } from "./components/ProductionView";
+import { CommercialView } from "./components/CommercialView";
+import { AllocationView } from "./components/AllocationView";
 
-type TabId = "today" | "production";
+type TabId = "today" | "production" | "commercial" | "allocation" | "assistant";
 
 const TABS: { id: TabId; label: string; step: string }[] = [
   { id: "today", label: "Today", step: "1 · Load & compare" },
   { id: "production", label: "Production", step: "2 · Compare" },
+  { id: "commercial", label: "Commercial", step: "3 · Plan" },
+  { id: "allocation", label: "Allocation", step: "4 · Decide" },
+  { id: "assistant", label: "Assistant", step: "5 · Explain" },
 ];
 
 type Status = "loading" | "ready" | "error";
@@ -123,6 +128,11 @@ export function App() {
               {tab === "production" && (
                 <ProductionView farms={plan.farm_comparisons} />
               )}
+              {tab === "commercial" && (
+                <CommercialView clients={plan.client_statuses} />
+              )}
+              {tab === "allocation" && <AllocationView plan={plan} />}
+              {/* {tab === "assistant" && <AssistantPanel plan={plan} />} */}
             </div>
           </>
         )}
