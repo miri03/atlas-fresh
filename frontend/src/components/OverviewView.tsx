@@ -19,11 +19,11 @@ function topGaps(plan: PlanResult, direction: 'below' | 'above', n = 4) {
 
 function headlineInsight(plan: PlanResult): string[] {
   const lines: string[] = []
-  const belowA = topGaps(plan, 'below', 99).filter((g) => g.segment === 'A')
-  const aShortfall = belowA.reduce((acc, g) => acc + Math.abs(g.variance), 0)
+  const { expected_by_segment_t, actual_by_segment_t } = plan.data_health
+  const aShortfall = expected_by_segment_t.A - actual_by_segment_t.A
   if (aShortfall >= 5) lines.push(`Segment A — the hardest quality to produce — arrived ${aShortfall.toFixed(1)} t below plan.`)
-  const belowTotal = topGaps(plan, 'below', 99).reduce((acc, g) => acc + Math.abs(g.variance), 0)
-  lines.push(`Farm receipts total ${plan.kpis.actual_received_t} t against ${plan.kpis.expected_plan_t} t planned — ${belowTotal.toFixed(1)} t of segment shortfall vs plan.`)
+  const netShortfall = plan.kpis.expected_plan_t - plan.kpis.actual_received_t
+  lines.push(`Farm receipts total ${plan.kpis.actual_received_t} t against ${plan.kpis.expected_plan_t} t planned — ${Math.abs(netShortfall).toFixed(1)} t below plan for the day.`)
   const partial = plan.client_statuses.filter((c) => c.status === 'PARTIAL')
   const unserved = plan.client_statuses.filter((c) => c.status === 'UNSERVED')
   if (partial.length) {
