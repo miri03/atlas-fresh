@@ -1,6 +1,8 @@
 import type {
   ApiError,
+  DataHealth,
   HealthResponse,
+  PlanResult,
 } from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -26,6 +28,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<HealthResponse>('/api/health'),
+
+  seed: () => request<DataHealth>('/api/seed', { method: 'POST' }),
+
+  plan: () => request<PlanResult>('/api/plan', { method: 'POST' }),
+
 }
 
 export function describeApiError(err: unknown): string {
