@@ -24,7 +24,7 @@ def plan():
 
 def test_classification(plan):
     assert ai.classify_question("Which clients are at risk and why?") == "at_risk"
-    assert ai.classify_question("Which farm/segment gaps matter most today?") == "farm_gaps"
+    assert ai.classify_question("What are the biggest farm variances?") == "farm_gaps"
     assert ai.classify_question("Why are 60 t going local and what is their estimated value?") == "local_market"
 
 

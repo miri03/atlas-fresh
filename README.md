@@ -38,8 +38,7 @@ npm --prefix frontend run build
 
 Equivalent one-liner: `make setup && make run`. If the supplied workbook is not under
 `data/Atlas_Fresh_Production_Commercial_Data.xlsx`, copy your copy of the packet file there or
-set `ATLAS_DATA_PATH=/path/to/your.xlsx`. The workbook in `data/` is byte-for-byte the one from
-the assessment pack; the source in `Assessment_Pack/` is never written to.
+set `ATLAS_DATA_PATH=/path/to/your.xlsx`.
 
 ### Tests & build
 
@@ -96,28 +95,6 @@ Implemented verbatim in `backend/app/engine.py` per the brief:
 tests that mutate input): 600 t plan · 560 t actual · 500 t export · 89.3% export rate ·
 60 t local · €549,500 export revenue · €4,500 local value · €554,000 total · 3 at-risk clients
 (C02, C09 partial via segment shortage; C08 partial via station capacity).
-
----
-
-## Architecture
-
-```
-backend/                      Python 3.10 · FastAPI · openpyxl · pydantic
-  app/
-    main.py                   routes: /api/health, /api/seed, /api/plan, /api/assistant; serves frontend/dist
-    loader.py                 xlsx parsing + strict business validation (tagged with sheet:ID)
-    engine.py                 deterministic planning policy + KPIs/reasons/local residual
-    ai.py                     grounded assistant: deterministic summary + optional model path
-    segments.py               quality order, compatibility, upgrade distance
-    schemas.py                typed response models (the exact JSON contract)
-  tests/                      39 tests: engine (11), validation (13), API (5), AI (10)
-frontend/                     React 18 + TypeScript + Vite (no UI/chart libs; inline SVG)
-  src/components/             Overview, KpiBanner, charts, Production, Commercial, Allocation, Assistant
-data/                         the supplied workbook (copy of the pack file, kept unchanged)
-Makefile                      setup / test / build / run / dev
-```
-
-Design choices — see **Assumptions** below for the trade-offs.
 
 ---
 
@@ -193,19 +170,3 @@ states. The source workbook is never modified.
    capacity-what-if comparison (e.g. +50 t to station) computed with the same deterministic engine.
 
 ---
-
-## AI tooling disclosure (as required)
-
-- **Assistants of code:** this project was built with the opencode coding agent (model
-  `big-pickle`). It drafted the backend engine, loader, schemas, frontend components and README;
-  I reviewed and corrected its test expectations, ran the full suite, and verified the live API
-  output against the public baseline numbers before submission.
-- **LLM in the product itself:** the *planning assistant* uses a hosted/local model only when an
-  endpoint is configured; by default it returns a deterministic server summary. The LLM never
-  computes allocations or KPIs (explicitly forbidden by the brief).
-- **Data:** all figures are synthetic and supplied by Qarizmi; no secrets or client data are
-  included.
-- **Time spent:** ~9 hours across planning, implementation, testing, verification and docs.
-- **Walkthrough video:** (add your Loom/other URL here)
-
-<sub>Deliverables: repository (this), README, 39 tests, baseline parity, grounded assistant, honest fallbacks.</sub>

@@ -5,7 +5,7 @@ import { Spinner } from './ui'
 
 const QUICK_QUESTIONS = [
   'Which clients are at risk and why?',
-  'Which farm/segment gaps matter most today?',
+  'What are the biggest farm variances?',
   'Why are 60 t going local and what is their estimated value?',
 ]
 
