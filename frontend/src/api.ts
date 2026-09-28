@@ -1,5 +1,6 @@
 import type {
   ApiError,
+  AssistantResponse,
   DataHealth,
   HealthResponse,
   PlanResult,
@@ -33,6 +34,11 @@ export const api = {
 
   plan: () => request<PlanResult>('/api/plan', { method: 'POST' }),
 
+  assistant: (question: string) =>
+    request<AssistantResponse>('/api/assistant', {
+      method: 'POST',
+      body: JSON.stringify({ question }),
+    }),
 }
 
 export function describeApiError(err: unknown): string {

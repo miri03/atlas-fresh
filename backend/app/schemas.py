@@ -66,20 +66,6 @@ class DataHealth(BaseModel):
     client_count: int
     issues: list[str] = Field(default_factory=list)
 
-# ---------------------------------------------------------------------------
-# Errors
-# ---------------------------------------------------------------------------
-
-
-class ValidationIssue(BaseModel):
-    location: str  # e.g. "Farms:F03"
-    message: str
-
-
-class ErrorResponse(BaseModel):
-    error: str
-    detail: str | None = None
-    issues: list[ValidationIssue] = Field(default_factory=list)
 
 # ---------------------------------------------------------------------------
 # Planning output
@@ -161,3 +147,37 @@ class PlanResult(BaseModel):
     variances: list[FarmVariance]
     kpis: KpiReport
     data_health: DataHealth
+
+
+# ---------------------------------------------------------------------------
+# Assistant
+# ---------------------------------------------------------------------------
+
+
+class AssistantRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=1000)
+
+
+class AssistantResponse(BaseModel):
+    mode: str = Field(description="deterministic | llm")
+    answer: str
+    evidence: list[str] = Field(default_factory=list, description="Resolvable IDs cited")
+    configured: bool = Field(description="A live model path is configured")
+    question_type: str | None = None
+    using_deterministic_fallback: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Errors
+# ---------------------------------------------------------------------------
+
+
+class ValidationIssue(BaseModel):
+    location: str  # e.g. "Farms:F03"
+    message: str
+
+
+class ErrorResponse(BaseModel):
+    error: str
+    detail: str | None = None
+    issues: list[ValidationIssue] = Field(default_factory=list)

@@ -130,10 +130,21 @@ Design choices — see **Assumptions** below for the trade-offs.
   Ollama/llama.cpp gateway and it uses the local model):
 
   ```bash
-  export OPENAI_API_KEY="sk-…"                       # required for hosted OpenAI
-  export OPENAI_BASE_URL="http://localhost:11434/v1" # optional: local model gateway (Ollama)
-  export OPENAI_MODEL="gpt-4o-mini"                  # or "llama3.1", "qwen:7b", ...
+  cp .env.example .env      # then edit .env
+  make run                  # .env is loaded automatically at startup
   ```
+
+  | Provider | `OPENAI_BASE_URL` | `OPENAI_MODEL` |
+  |---|---|---|
+  | Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-3.8-flash` |
+  | OpenAI | *(leave empty)* | `gpt-4o-mini` |
+  | Ollama (local) | `http://localhost:11434/v1` | `llama3.1` |
+
+  Only `OPENAI_API_KEY` is required; take a Gemini key from
+  <https://aistudio.google.com/apikey>. Gemini is reached through its
+  OpenAI-compatible endpoint, so no code change or extra dependency is needed.
+  `.env` is read by `python-dotenv` at startup, and real environment variables
+  take precedence over it.
 
 - **Boundaries (enforced):** the model receives only a minimal structured context; cited IDs are
   regex-validated against the actual farm/client/segment sets — output citing unknown IDs is

@@ -7,6 +7,7 @@ import { OverviewView } from "./components/OverviewView";
 import { ProductionView } from "./components/ProductionView";
 import { CommercialView } from "./components/CommercialView";
 import { AllocationView } from "./components/AllocationView";
+import { AssistantPanel } from "./components/AssistantPanel";
 
 type TabId = "today" | "production" | "commercial" | "allocation" | "assistant";
 
@@ -132,7 +133,7 @@ export function App() {
                 <CommercialView clients={plan.client_statuses} />
               )}
               {tab === "allocation" && <AllocationView plan={plan} />}
-              {/* {tab === "assistant" && <AssistantPanel plan={plan} />} */}
+              {tab === "assistant" && <AssistantPanel plan={plan} />}
             </div>
           </>
         )}

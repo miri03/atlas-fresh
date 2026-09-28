@@ -13,14 +13,30 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
 
+from . import ai
 from .engine import run_plan
-
-from .schemas import DataHealth, ErrorResponse, PlanResult, WorkbookData
 from .loader import WorkbookValidationError, build_data_health, load_workbook
+from .schemas import AssistantRequest, AssistantResponse, DataHealth, ErrorResponse, PlanResult, WorkbookData
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-DEFAULT_DATA_PATH = Path(os.getenv("ATLAS_DATA_PATH", ROOT / "data" / "Atlas_Fresh_Production_Commercial_Data.xlsx"))
+load_dotenv(ROOT / ".env")
+
+# Some Python builds (notably the python.org framework on macOS) ship without a
+# readable default CA bundle, which makes every outbound HTTPS call fail with
+# CERTIFICATE_VERIFY_FAILED. certifi is already installed as an httpx
+# dependency, so point OpenSSL at its bundle unless the user set SSL_CERT_FILE.
+if "SSL_CERT_FILE" not in os.environ:
+    try:
+        import certifi
+
+        os.environ["SSL_CERT_FILE"] = certifi.where()
+    except ImportError:
+        pass
+
+_data_path = Path(os.getenv("ATLAS_DATA_PATH", ROOT / "data" / "Atlas_Fresh_Production_Commercial_Data.xlsx"))
+DEFAULT_DATA_PATH = _data_path if _data_path.is_absolute() else ROOT / _data_path
 FRONTEND_DIST = ROOT / "frontend" / "dist"
 
 app = FastAPI(
@@ -39,6 +55,7 @@ def _get_data() -> WorkbookData:
     _CACHE[path] = data
     return data
 
+
 def _error(status: int, error: str, detail: str | None = None, issues: list[tuple[str, str]] | None = None) -> HTTPException:
     payload = ErrorResponse(
         error=error,
@@ -49,7 +66,7 @@ def _error(status: int, error: str, detail: str | None = None, issues: list[tupl
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "assistant_configured": ai.is_configured()}
 
 @app.post("/api/seed", response_model=DataHealth)
 def seed() -> DataHealth:
@@ -73,6 +90,14 @@ def plan() -> PlanResult:
     except Exception as e:
         raise _error(500, "workbook_load_failed", f"Could not load workbook: {e}")
     return run_plan(data)
+
+
+@app.post("/api/assistant", response_model=AssistantResponse)
+def assistant(req: AssistantRequest) -> AssistantResponse:
+    """Grounded explanation of the computed plan (read-only)."""
+    data = _get_data()
+    plan_result = run_plan(data)
+    return ai.run_assistant(plan_result, req.question)
 
 
 # ---------------------------------------------------------------------------
